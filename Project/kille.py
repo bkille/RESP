@@ -6,6 +6,7 @@ import termcolor
 from termcolor import cprint
 from tqdm import tqdm
 import copy
+import time
 
 
 def winner_stone(board, stone):
@@ -278,8 +279,13 @@ from prettytable import PrettyTable
 
 def get_random_board(n, turn_count=None):
     board = np.array([["-"]*n for _ in range(n)])
-    moves = random.randint(1, n*n/2) if not turn_count else turn_count
+    moves = random.randint(1, n*n/2) if turn_count is None else turn_count
     stone = "X"
+    board[n//2][n//2] = "X"
+    board[n//2 - 1][n//2 - 1] = "X"
+    board[n//2 - 1][n//2] = "O"
+    board[n//2][n//2 - 1] = "O"
+    
     for _ in range(moves):
         row_idx = col_idx = -1
         while row_idx < 0 and board[row_idx][col_idx] != "-":
@@ -291,7 +297,56 @@ def get_random_board(n, turn_count=None):
         board = get_random_board(n)
     return board
 
-def run_tournament(N=10):
+def get_winner_name(turn_count, e1, e2):
+    board = get_random_board(n=8, turn_count=turn_count)
+    if random.random() <= 0.5:
+        e1, e2 = e2, e1
+    eval_x, name_x = e1
+    eval_o, name_o = e2
+    p1 = Strategy("X", eval_x, max_depth=1)
+    p2 = Strategy("O", eval_o, max_depth=1)
+    winner = play_game(board, p1, p2, supress_output=True)
+    if winner == "X":
+        return name_x
+    elif winner == "O":
+        return name_o
+
+
+def avg_time(eval_f, N=1000):
+    boards = [get_random_board(n=8, turn_count=random.randint(0, 8*8/2)) for _ in range(N)]
+    t0 = time.time()
+    for board in boards:
+        eval_f(board, "X")
+    return (time.time() - t0)/N
+
+
+def get_times():
+    from group1 import student_eval as group1_eval
+    from group2 import student_eval as group2_eval
+    from group3 import student_eval as group3_eval
+    from group4 import student_eval as group4_eval
+    from group5 import student_eval as group5_eval
+    easy_bot = partial(slider_eval, difficulty=0)
+    medium_bot = partial(slider_eval, difficulty=0.2)
+    hard_bot = partial(slider_eval, difficulty=0.5)
+    hardest_bot = partial(slider_eval, difficulty=1.0)
+
+    eval_functions = [
+        (easy_bot, "easy bot"),
+        (medium_bot, "medium bot"),
+        (hard_bot, "hard bot"),
+        (hardest_bot, "hardest bot"),
+        (group1_eval, "Group 1"),
+        (group2_eval, "Group 2"),
+        (group3_eval, "Group 3"),
+        (group4_eval, "Group 4"),
+        (group5_eval, "Group 5")
+    ]
+    
+    for eval_f, bot_name in eval_functions:
+        print(f"The eval function for {bot_name} has an average time of {avg_time(eval_f)}s")
+
+def run_tournament(N=10, random_board=False):
     from group1 import student_eval as group1_eval
     from group2 import student_eval as group2_eval
     from group3 import student_eval as group3_eval
@@ -314,31 +369,17 @@ def run_tournament(N=10):
         (group4_eval, "Group 4"),
         (group5_eval, "Group 5")
     ]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(12)
     all_pairs = list(combinations(eval_functions, 2))
-    N = 100
-
+    
     win_count = {gname: [] for _, gname in eval_functions}
-    def get_winner_name(turn_count, e1, e2):
-        board = get_random_board(n=8, turn_count=turn_count)
-        if random.random() <= 0.5:
-                e1, e2 = e2, e1
-        eval_x, name_x = e1
-        eval_o, name_o = e2
-        p1 = Strategy("X", eval_x, max_depth=1)
-        p2 = Strategy("O", eval_o, max_depth=1)
-        winner = play_game(board, p1, p2, supress_output=True)
-        if winner == "X":
-            return name_x
-        elif winner == "O":
-            return name_o
-
     for e1, e2 in tqdm(all_pairs):
         # print(e1[1], e2[1])
         eval_1, name_1 = e1
         eval_2, name_2 = e2
         f = partial(get_winner_name, e1=e1, e2=e2)
-        winners = pool.imap_unordered(f, (0 for _ in range(N)))
+        winners = pool.imap_unordered(f, (random.randint(0, 8*8/2) if random_board else 0 for _ in range(N)))
+        # winners = [f(random.randint(0, 8*8/2)) for x in range(N)]
         for winner in winners:
             if winner == name_1:
                 win_count[name_1].append(name_2)
@@ -347,8 +388,8 @@ def run_tournament(N=10):
 
     win_array = np.zeros((len(eval_functions), len(eval_functions)), dtype=object)
     for gidx, (_, gname) in enumerate(eval_functions):
-        if "bot" in gname:
-            continue
+        # if "bot" in gname:
+        #     continue
         count = Counter(win_count[gname])
         for oidx, (_, opponent) in enumerate(eval_functions):
             if gname == opponent:
@@ -360,40 +401,9 @@ def run_tournament(N=10):
 
     table.field_names = [str(N)] + [gname for _, gname in eval_functions]
     for gidx, (_, gname) in enumerate(eval_functions):
-        if "bot" in gname:
-            continue
+    #     if "bot" in gname:
+    #         continue
         table.add_row([gname] + list(win_array[gidx]))
     print(table)
-
-    win_count = {gname: [] for _, gname in eval_functions}
-    for e1, e2 in tqdm(all_pairs):
-        # print(e1[1], e2[1])
-        eval_1, name_1 = e1
-        eval_2, name_2 = e2
-        f = partial(get_winner_name, e1=e1, e2=e2)
-        winners = pool.imap_unordered(f, (random.randint(0, 8*8/2) for _ in range(N)))
-        for winner in winners:
-            if winner == name_1:
-                win_count[name_1].append(name_2)
-            elif winner == name_2:
-                win_count[name_2].append(name_1)
-
-    win_array = np.zeros((len(eval_functions), len(eval_functions)), dtype=object)
-    for gidx, (_, gname) in enumerate(eval_functions):
-        if "bot" in gname:
-            continue
-        count = Counter(win_count[gname])
-        for oidx, (_, opponent) in enumerate(eval_functions):
-            if gname == opponent:
-                win_array[gidx][oidx] = '-'
-                continue
-            win_array[gidx][oidx] = count[opponent]
-
-    table = PrettyTable()
-
-    table.field_names = [str(N)] + [gname for _, gname in eval_functions]
-    for gidx, (_, gname) in enumerate(eval_functions):
-        if "bot" in gname:
-            continue
-        table.add_row([gname] + list(win_array[gidx]))
-    print(table)
+    
+    
