@@ -276,6 +276,41 @@ def up_diagonal_probability(board, stone):
     col_idx += 1
   return probability
   
+def down_diagonal_probability(board, stone):
+  probability = 0
+  row_idx = 0
+  col_idx = 0
+  while col_idx < len(board):
+    diagonal = get_downdiag(board, row_idx, col_idx)
+    if student_consecutive_k(diagonal, 1, stone):
+      probability = 1
+    if student_consecutive_k(diagonal, 2, stone):
+      probability = 2
+    if student_consecutive_k(diagonal, 3, stone):
+      probability = 3
+    if student_consecutive_k(diagonal, 4, stone):
+      probability = 4
+    if student_consecutive_k(diagonal, 5, stone):
+      probability = 5
+    col_idx += 1
+  
+  row_idx = 1
+  col_idx = 0
+  while row_idx < len(board):
+    diagonal = get_downdiag(board, row_idx, col_idx)
+    if student_consecutive_k(diagonal, 1, stone):
+      probability = 1
+    if student_consecutive_k(diagonal, 2, stone):
+      probability = 2
+    if student_consecutive_k(diagonal, 3, stone):
+      probability = 3
+    if student_consecutive_k(diagonal, 4, stone):
+      probability = 4
+    if student_consecutive_k(diagonal, 5, stone):
+      probability = 5
+    row_idx += 1
+  
+  return probability
 
 
 
@@ -299,6 +334,10 @@ def student_eval(board, stone):
   # Determines up-diagonal probabilities
   student_up_diag_prob = up_diagonal_probability(board, stone)
   opponent_up_diag_prob = - (up_diagonal_probability(board, other_stone(stone)))
+
+  # Determines down-diagonal probabilities
+  student_down_diag_prob = down_diagonal_probability(board, stone)
+  opponent_down_diag_prob = - (down_diagonal_probability(board, other_stone(stone)))
   
   # Determines if there are any winners  
   if winner_stone(board, stone) == True:
@@ -323,18 +362,37 @@ def student_eval(board, stone):
     up_diag_prob = student_up_diag_prob
   else:
     up_diag_prob = opponent_up_diag_prob
+  # Compares down diagonal probabilities
+  if student_down_diag_prob > abs(opponent_down_diag_prob):
+    down_diag_prob =  student_down_diag_prob
+  else:
+    down_diag_prob = opponent_down_diag_prob
   # Compares final row and final column probabilites
   if abs(row_prob) > abs(column_prob):
-    probability = row_prob
+    prob_1 = row_prob
   else:
-    probability = column_prob
-  # Compares winner of row and column probabilities with winner of up diagonal probability 
-  if abs(up_diag_prob) > abs(probability):
-    probability = up_diag_prob
-    
-  return probability # Returns final probability of the board
+    prob_1 = column_prob
+  # Compares final diagonal probabilities
+  if abs(up_diag_prob) > abs(down_diag_prob):
+    prob_2 = up_diag_prob
+  else:
+    prob_2 = down_diag_prob
+  # Compares final probabilities
+  if abs(prob_1) > abs(prob_2):
+    final_prob = prob_1
+  else:
+    final_prob = prob_2
 
 
-# In[25]:
+  return final_prob # Returns final probability of the board
+
+
+
+
+
+# In[ ]:
+
+
+
 
 

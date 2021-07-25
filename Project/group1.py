@@ -144,7 +144,7 @@ def min(x, y):
         return y
 
 
-# In[97]:
+# In[146]:
 
 
 #### Devin's open_k function
@@ -179,23 +179,34 @@ def halfopen_k(input_list, k, stone):
     counter = 0
 
     for i in range(len(input_list[0:])):
-      if counter != k:
-        if input_list[i] == stone:
-          counter += 1
-        elif input_list[i] != stone:
-          counter = 0
-      else:
-        if i-k-1 != -1: 
-          if input_list[i-k-1] == "-" or input_list[i] == "-":
-          
-            ret_bool = True
-          else:
-        
-            counter = 0
+
+        if counter != (k):
+            if input_list[i] == stone:
+                counter += 1
+            elif input_list[i] != stone:
+                counter = 0
         else:
-          counter = 0
-    '''if counter == k:
-      ret_bool = True'''
+            #if i-(k)-1 != -1: 
+                if input_list[i-k-1] == "-" or input_list[i] == "-":
+          
+                    ret_bool = True
+                else:
+        
+                    counter = 0
+            #else:
+                #counter = 0
+
+
+    if counter == k:
+        
+        ret_bool = True
+        if input_list[i-k-1] == "-" or input_list[i] == "-":
+          
+                    ret_bool = True
+        else:
+        
+                    counter = 0
+                    ret_bool = False
     
     return ret_bool 
 
@@ -204,9 +215,10 @@ def halfopen_k(input_list, k, stone):
 def whole_halfopen_k(whole_list, k, stone):
     """ returns True if there exists a halfopen_k somewhere in whole_list """
 
-    for i in range(len(whole_list) - 6):
-        small_list = whole_list[i :  i + 5]
+    for i in range(len(whole_list) - k):
+        small_list = whole_list[i :  i + k + 1]
 
+        
         if halfopen_k(small_list, k, stone):
             return True
 
@@ -215,8 +227,9 @@ def whole_halfopen_k(whole_list, k, stone):
 def whole_open_k(whole_list, k, stone):
     """ returns True if there exists an open_k somewhere in whole_list """
 
-    for i in range(len(whole_list) - 6):
-        small_list = whole_list[i :  i + 6]
+    for i in range(len(whole_list) - k - 1):
+        small_list = whole_list[i :  i + k + 2]
+
 
         if open_k(small_list, k, stone):
             return True
@@ -224,81 +237,116 @@ def whole_open_k(whole_list, k, stone):
     return False
 
 
-# In[98]:
+#### Checking functions: the same thing I copy pasted that returns a probability of a list
+
+def get_probablity(curr_list, k, stone, opp_stone):
+    """
+    list: list to check
+    k: consecutive_k to check
+    stone: stone to check for
+
+    Returns a number between -10 to 10, with a higher number having a higher probability to win
+    """
+
+    to_return = 0
+
+    if stone == opp_stone:
+        curr_list = remove_opp_spaces(curr_list, k, stone)
+
+    if is_consecutive_k(curr_list, k, stone) and whole_halfopen_k(curr_list, k, stone):
+        to_return = k * 2
+
+        if is_consecutive_k(curr_list, k, other_stone(stone)):
+            if not whole_halfopen_k(curr_list, k, other_stone(stone)):
+                to_return = (k * 2) + 1
+    
+    #if (open_k(remove_opp_spaces))
+    
+    return to_return
+
+def remove_opp_spaces(curr_list, k, stone):
+    if k == 1:
+        return curr_list
+    else:
+        is_valid = False
+        count = 0
+        for i in range(len(curr_list)):
+
+            if is_valid:
+                count = count + 1
+                if curr_list[i] == other_stone(stone):
+                    is_valid = False
+                    count = 0
+            elif curr_list[i] == stone:
+                is_valid = True
+                start = i
+                count = count + 1
+            
+
+            if count == k:
+                if curr_list[i] == "-":
+                    count = 0
+                    is_valid = False
+            if count == k:
+                for j in range(start, i+1):
+                    curr_list[j] = stone 
+                count = 0
+                is_valid = False
+        
+        return curr_list
+
+### test remove_opp_spaces
+
+# In[232]:
 
 
-#### Debugging for open_k:
-
-test_list = ["X", "-", "X", "X", "X", "X", "X", "X", "X"]
-
-print(whole_open_k(test_list, 4, "X"))
-
-
-# In[74]:
-
+####### REVERT TO THIS EDIT 7/24/2021 11:49PM
 
 def student_eval(board, stone):
-    """ returns something """
+    """ 
+    Returns a theoretical probability of stone winning
+    the provided board in Connect 5, where the higher
+    probability is a better win chance 
+    """
 
     if winner_stone(board, stone):
-        return 10
+        return 100
     if winner_stone(board, other_stone(stone)):
-        return -10
+        return -100
     if not winner_stone(board, stone) and not winner_stone(board, other_stone(stone)) and complete_board(board):
         return 0
-    
 
-    max_return = -11
-    max_other_stone = -11
+    max_return = -13
+    max_other_stone = -13
 
     #### use the diagonals to check, and use consecutive
     #### use the verticals to check, and use consecutive
 
     #### horizontal checks ####################################################################################################################################
-    for curr_row in board:
+    for curr_list in board:
+
+        curr_row = []
+        for i in curr_list:
+            curr_row.append(i)
         
-        if whole_open_k(curr_row, 4, other_stone(stone)):
-            return -10
+        if whole_open_k(curr_row, 3, other_stone(stone)) or whole_halfopen_k(curr_row, 4, other_stone(stone)):
+            return -100
         if whole_open_k(curr_row, 4, stone):
-            max_return = 10
+            max_return = 11
         
-        if is_consecutive_k(curr_row, 4, stone) and whole_halfopen_k(curr_row, 4, stone):
-            max_return = max(max_return, 8) #### placeholder, will add the open_k and halfopen_k check later
+        max_return = max(max_return, get_probablity(curr_row, 4, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_row, 4, other_stone(stone), other_stone(stone)) + 4)
 
-            if is_consecutive_k(curr_row, 4, other_stone(stone)):
-                if whole_halfopen_k(curr_row, 4, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 8)
-                else:
-                    max_return = max(max_return, 9)    
+        max_return = max(max_return, get_probablity(curr_row, 3, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_row, 3, other_stone(stone), other_stone(stone)) + 4) 
 
-        if is_consecutive_k(curr_row, 3, stone) and whole_halfopen_k(curr_row, 3, stone):
-            max_return = max(max_return, 6)
-
-            if is_consecutive_k(curr_row, 3, other_stone(stone)):
-                if whole_halfopen_k(curr_row, 3, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 6)
-                else:
-                    max_return = max(max_return, 7)   
-
-        if is_consecutive_k(curr_row, 2, stone) and whole_halfopen_k(curr_row, 2, stone):
-            max_return = max(max_return, 4)
-
-            if is_consecutive_k(curr_row, 2, other_stone(stone)):
-                if whole_halfopen_k(curr_row, 2, other_stone(stone)):    
-                    max_other_stone = max(max_other_stone, 4)
-                else:
-                    max_return = max(max_return, 5)   
+        max_return = max(max_return, get_probablity(curr_row, 2, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_row, 2, other_stone(stone), other_stone(stone)) + 4)
             
 
-        if is_consecutive_k(curr_row, 1, stone) and whole_halfopen_k(curr_row, 1, stone):
-            max_return = max(max_return, 2)
+        max_return = max(max_return, get_probablity(curr_row, 1, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_row, 1, other_stone(stone), other_stone(stone)) + 4)
 
-            if is_consecutive_k(curr_row, 1, other_stone(stone)):
-                if whole_halfopen_k(curr_row, 1, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 2)
-                else:
-                    max_return = max(max_return, 3)   
-    
     #### vertical checks ##########################################################################################################################################
     for i in range(len(board[0])):
         curr_vert = []
@@ -306,251 +354,113 @@ def student_eval(board, stone):
         for curr_horz in board:
             curr_vert.append(curr_horz[i])
 
-        if whole_open_k(curr_vert, 4, other_stone(stone)):
-            return -10
+        if whole_open_k(curr_vert, 3, other_stone(stone)) or whole_halfopen_k(curr_vert, 4, other_stone(stone)):
+            return -100
         if whole_open_k(curr_vert, 4, stone):
-            max_return = 10
+            max_return = 11
         
-        if is_consecutive_k(curr_vert, 4, stone) and whole_halfopen_k(curr_vert, 4, stone):
-            max_return = max(max_return, 8) #### placeholder, will add the open_k and halfopen_k check later
-
-            if is_consecutive_k(curr_vert, 4, other_stone(stone)):
-                if whole_halfopen_k(curr_vert, 4, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 8)
-                else:
-                    max_return = max(max_return, 9)
+        max_return = max(max_return, get_probablity(curr_vert, 4, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_vert, 4, other_stone(stone), other_stone(stone)) + 4)
             
-        if is_consecutive_k(curr_vert, 3, stone) and whole_halfopen_k(curr_vert, 3, stone):
-            max_return = max(max_return, 6)
-
-            if is_consecutive_k(curr_vert, 3, other_stone(stone)):
-                if whole_halfopen_k(curr_vert, 3, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 6)
-                else:
-                    max_return = max(max_return, 7)
+        max_return = max(max_return, get_probablity(curr_vert, 3, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_vert, 3, other_stone(stone), other_stone(stone)) + 4)
             
-        if is_consecutive_k(curr_vert, 2, stone) and whole_halfopen_k(curr_vert, 2, stone):
-            max_return = max(max_return, 4)
-
-            if is_consecutive_k(curr_vert, 2, other_stone(stone)):
-                if whole_halfopen_k(curr_vert, 2, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 4)
-                else:
-                    max_return = max(max_return, 5)
+        max_return = max(max_return, get_probablity(curr_vert, 2, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_vert, 2, other_stone(stone), other_stone(stone)) + 4)
             
-        if is_consecutive_k(curr_vert, 1, stone) and whole_halfopen_k(curr_vert, 1, stone):
-            max_return = max(max_return, 2)
-
-            if is_consecutive_k(curr_vert, 1, other_stone(stone)):
-                if whole_halfopen_k(curr_vert, 1, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 2)
-                else:
-                    max_return = max(max_return, 3)
+        max_return = max(max_return, get_probablity(curr_vert, 1, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_vert, 1, other_stone(stone), other_stone(stone)) + 4)
     
     #### down_diag checks ##################################################################################################################################
     for i in range(len(board[0])):
         curr_diag = get_downdiag(board, 0, i)
 
-        if whole_open_k(curr_diag, 4, other_stone(stone)):
-            return -10
+        if whole_open_k(curr_diag, 3, other_stone(stone)) or whole_halfopen_k(curr_diag, 4, other_stone(stone)):
+            return -100
         if whole_open_k(curr_diag, 4, stone):
-            max_return = 10
+            max_return = 11
 
-        if is_consecutive_k(curr_diag, 4, stone) and whole_halfopen_k(curr_diag, 4, stone):
-            max_return = max(max_return, 8) #### placeholder, will add the open_k and halfopen_k check later
-
-            if is_consecutive_k(curr_diag, 4, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 4, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 8)
-                else:
-                    max_return = max(max_return, 9)
-
-                #### 
+        max_return = max(max_return, get_probablity(curr_diag, 4, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
         
-        if is_consecutive_k(curr_diag, 3, stone) and whole_halfopen_k(curr_diag, 3, stone):
-            max_return = max(max_return, 6)
-
-            if is_consecutive_k(curr_diag, 3, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 3, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 6)
-                else:
-                    max_return = max(max_return, 7)
+        max_return = max(max_return, get_probablity(curr_diag, 3, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
             
-
-        if is_consecutive_k(curr_diag, 2, stone) and whole_halfopen_k(curr_diag, 2, stone):
-            max_return = max(max_return, 4)
-
-            if is_consecutive_k(curr_diag, 2, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 2, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 4)
-                else:
-                    max_return = max(max_return, 5)
+        max_return = max(max_return, get_probablity(curr_diag, 2, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
             
-
-        if is_consecutive_k(curr_diag, 1, stone) and whole_halfopen_k(curr_diag, 1, stone):
-            max_return = max(max_return, 2)
-
-            if is_consecutive_k(curr_diag, 1, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 1, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 2)
-                else:
-                    max_return = max(max_return, 3)
+        max_return = max(max_return, get_probablity(curr_diag, 1, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
     
     for i in range(len(board)):
         curr_diag = get_downdiag(board, i, 0)
 
-        if whole_open_k(curr_diag, 4, other_stone(stone)):
-            return -10
+        if whole_open_k(curr_diag, 3, other_stone(stone)) or whole_halfopen_k(curr_diag, 4, other_stone(stone)):
+            return -100
         if whole_open_k(curr_diag, 4, stone):
-            max_return = 10
+            max_return = 11
 
-        if is_consecutive_k(curr_diag, 4, stone) and whole_halfopen_k(curr_diag, 4, stone):
-            max_return = max(max_return, 8) #### placeholder, will add the open_k and halfopen_k check later
-
-            if is_consecutive_k(curr_diag, 4, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 4, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 8)
-                else:
-                    max_return = max(max_return, 9)
+        max_return = max(max_return, get_probablity(curr_diag, 4, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
         
-        if is_consecutive_k(curr_diag, 3, stone) and whole_halfopen_k(curr_diag, 3, stone):
-            max_return = max(max_return, 6)
-
-            if is_consecutive_k(curr_diag, 3, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 3, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 6)
-                else:
-                    max_return = max(max_return, 7)
+        max_return = max(max_return, get_probablity(curr_diag, 3, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
             
-
-        if is_consecutive_k(curr_diag, 2, stone) and whole_halfopen_k(curr_diag, 2, stone):
-            max_return = max(max_return, 4)
-
-            if is_consecutive_k(curr_diag, 2, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 2, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 4)
-                else:
-                    max_return = max(max_return, 5)
+        max_return = max(max_return, get_probablity(curr_diag, 2, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
             
+        max_return = max(max_return, get_probablity(curr_diag, 1, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
 
-        if is_consecutive_k(curr_diag, 1, stone) and whole_halfopen_k(curr_diag, 1, stone):
-            max_return = max(max_return, 2)
-
-            if is_consecutive_k(curr_diag, 1, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 1, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 2)
-                else:
-                    max_return = max(max_return, 3)
-    
     #### up_diag checks ##################################################################################################################################
     for i in range(len(board[-1])):
-        curr_diag = get_updiag(board, 0, i)
+        curr_diag = get_updiag(board, (len(board)) - 1, i)
 
-        if whole_open_k(curr_diag, 4, other_stone(stone)):
+        if whole_open_k(curr_diag, 3, other_stone(stone)) or whole_halfopen_k(curr_diag, 4, other_stone(stone)):
             return -10
         if whole_open_k(curr_diag, 4, stone):
-            max_return = 10
+            max_return = 11
 
-        if is_consecutive_k(curr_diag, 4, stone) and whole_halfopen_k(curr_diag, 4, stone):
-            max_return = max(max_return, 8) #### placeholder, will add the open_k and halfopen_k check later
-
-            if is_consecutive_k(curr_diag, 4, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 4, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 8)
-                else:
-                    max_return = max(max_return, 9)
+        max_return = max(max_return, get_probablity(curr_diag, 4, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
         
-        if is_consecutive_k(curr_diag, 3, stone) and whole_halfopen_k(curr_diag, 3, stone):
-            max_return = max(max_return, 6)
-
-            if is_consecutive_k(curr_diag, 3, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 3, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 6)
-                else:
-                    max_return = max(max_return, 7)
+        max_return = max(max_return, get_probablity(curr_diag, 3, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
             
-
-        if is_consecutive_k(curr_diag, 2, stone) and whole_halfopen_k(curr_diag, 2, stone):
-            max_return = max(max_return, 4)
-
-            if is_consecutive_k(curr_diag, 2, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 2, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 4)
-                else:
-                    max_return = max(max_return, 5)
+        max_return = max(max_return, get_probablity(curr_diag, 2, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
             
+        max_return = max(max_return, get_probablity(curr_diag, 1, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
 
-        if is_consecutive_k(curr_diag, 1, stone) and whole_halfopen_k(curr_diag, 1, stone):
-            max_return = max(max_return, 2)
-
-            if is_consecutive_k(curr_diag, 1, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 1, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 2)
-                else:
-                    max_return = max(max_return, 3)
-    
     for i in range(len(board)):
-        curr_diag = get_downdiag(board, i, 0)
+        curr_diag = get_updiag(board, i, 0)
 
-        if whole_open_k(curr_diag, 4, other_stone(stone)):
-            return -10
+        if whole_open_k(curr_diag, 3, other_stone(stone)) or whole_halfopen_k(curr_diag, 4, other_stone(stone)):
+            return -100
         if whole_open_k(curr_diag, 4, stone):
-            max_return = 10
+            max_return = 11
 
-        if is_consecutive_k(curr_diag, 4, stone) and whole_halfopen_k(curr_diag, 4, stone):
-            max_return = max(max_return, 8) #### placeholder, will add the open_k and halfopen_k check later
-
-            if is_consecutive_k(curr_diag, 4, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 4, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 8)
+        max_return = max(max_return, get_probablity(curr_diag, 4, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
         
-        if is_consecutive_k(curr_diag, 3, stone) and whole_halfopen_k(curr_diag, 3, stone):
-            max_return = max(max_return, 6)
-
-            if is_consecutive_k(curr_diag, 3, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 4, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 6)
+        max_return = max(max_return, get_probablity(curr_diag, 3, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
             
-
-        if is_consecutive_k(curr_diag, 2, stone) and whole_halfopen_k(curr_diag, 2, stone):
-            max_return = max(max_return, 4)
-
-            if is_consecutive_k(curr_diag, 2, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 2, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 4)
+        max_return = max(max_return, get_probablity(curr_diag, 2, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
             
+        max_return = max(max_return, get_probablity(curr_diag, 1, stone, other_stone(stone)) - 1)
+        max_other_stone = max(max_other_stone, get_probablity(curr_diag, 4, other_stone(stone), other_stone(stone)) + 4)
 
-        if is_consecutive_k(curr_diag, 1, stone) and whole_halfopen_k(curr_diag, 1, stone):
-            max_return = max(max_return, 2)
-
-            if is_consecutive_k(curr_diag, 1, other_stone(stone)):
-                if whole_halfopen_k(curr_diag, 4, other_stone(stone)):
-                    max_other_stone = max(max_other_stone, 2)
-
-        if max_return == -11:
-            return 0
+    if max_return == -13:
+        return 0
         
-        if max_other_stone > max_return:
-            return -1 * max_other_stone
-        if max_other_stone == max_return:
-            return 0
-    
-    #print("CURRENT TURN:", str(stone))
-    #
-    #print("CURRENT BOARD:")
-    #print_board(board)
-    #
-    #print()
-    #print("MAX RETURN:", str(max_return))
-
+    if max_other_stone >= max_return:
+        return -1 * max_other_stone
+    if max_other_stone == max_return:
+        return 0
 
     if True:
         return max_return
-    
-
-    return random.random() # Replace this!
-    #### No, I don't think I will
-
-
-# In[75]:
 

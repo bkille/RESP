@@ -406,4 +406,17 @@ def run_tournament(N=10, random_board=False):
         table.add_row([gname] + list(win_array[gidx]))
     print(table)
     
-    
+
+# In[ ]:
+# hardest_bot = partial(slider_eval, difficulty=1.0)
+# p2 = Strategy("O", hardest_bot, max_depth=3)
+# small_board = np.array([list(x) for x in """
+# -|-|-|-|-|-|-|-
+# -|O|-|-|-|-|-|-
+# -|O|X|-|-|X|X|-
+# -||-|X|O|-|-|-
+# -|O|X|O|X|-|-|-
+# -|O|O|-|-|X|-|-
+# -|O|-|-|-|-|O|-
+# X|-|-|-|-|-|-|-""".replace("|", "").split('\n')[1:]])
+# print(p2.get_move(small_board))

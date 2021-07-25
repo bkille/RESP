@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 
 from termcolor import cprint
@@ -28,7 +28,7 @@ def get_random_board(n, turn_count=None):
     return board
 
 
-# In[3]:
+# In[ ]:
 
 
 # In[ ]:
@@ -82,7 +82,7 @@ def get_downdiag(board, row_idx, col_idx):
   return diagonal_list
 
 
-# In[4]:
+# In[ ]:
 
 
 def random_eval(_1, _2):
@@ -327,7 +327,4 @@ def student_eval(board, stone):
   #less than 5
 
   return rep_score # Replace this!
-
-
-# In[5]:
 

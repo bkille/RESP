@@ -51,13 +51,20 @@ def student_eval(board, stone):
 # =============================================================================
 import kille
 from functools import partial
-
+try:
+    from group1 import student_eval as group1_eval
+    from group2 import student_eval as group2_eval
+    from group3 import student_eval as group3_eval
+    from group4 import student_eval as group4_eval
+    from group5 import student_eval as group5_eval
+except:
+    pass
 small_board = np.array([list(x) for x in """
 -|-|-|-|-|-|-|-
 -|-|-|-|-|-|-|-
 -|-|-|-|-|-|-|-
--|-|-|-|-|-|-|-
--|-|-|-|-|-|-|-
+-|-|-|X|O|-|-|-
+-|-|-|O|X|-|-|-
 -|-|-|-|-|-|-|-
 -|-|-|-|-|-|-|-
 -|-|-|-|-|-|-|-""".replace("|", "").split('\n')[1:]])
@@ -68,7 +75,7 @@ small_board = np.array([list(x) for x in """
 difficulty_setting = 1
 slider_eval = partial(kille.slider_eval, difficulty=difficulty_setting)
 
-p1 = Strategy("X", group1_eval, max_depth=1) # Do not change the search depths!
+p1 = Strategy("X", group3_eval, max_depth=1) # Do not change the search depths!
 p2 = Strategy("O", slider_eval, max_depth=1)
 play_game(small_board, p1, p2) # Start with the small board, it is better for debugging.
 
@@ -104,14 +111,7 @@ print("Next move", p1.get_move(test_board, "X"))
 # =============================================================================
 import kille
 from functools import partial
-try:
-    from group1 import student_eval as group1_eval
-    from group2 import student_eval as group2_eval
-    from group3 import student_eval as group3_eval
-    from group4 import student_eval as group4_eval
-    from group5 import student_eval as group5_eval
-except:
-    pass
+
 # The difficulty_setting variable can be anything in [0, 1], with
 # higher values meaning a harder bot. 0 is the random bot
 # and 1 is the "hardest" bot
@@ -132,7 +132,7 @@ small_board = np.array([list(x) for x in """
 -|-|-|-|-|-|-|-
 -|-|-|-|-|-|-|-""".replace("|", "").split('\n')[1:]])
 
-p1 = Strategy("X", student_eval, max_depth=1) # Do not change the search depths!
+p1 = Strategy("X", group3_eval, max_depth=1) # Do not change the search depths!
 p2 = Strategy("O", slider_eval, max_depth=1)
 play_game(small_board, p1, p2)
 
@@ -152,7 +152,7 @@ small_board = np.array([list(x) for x in """
 -|-|-|-|-|-|-|-
 -|-|-|-|-|-|-|-""".replace("|", "").split('\n')[1:]])
 
-p1 = Strategy("X", student_eval, max_depth=1) # Do not change the search depths!
+p1 = Strategy("X", group3_eval, max_depth=1) # Do not change the search depths!
 p2 = Strategy("O", slider_eval, max_depth=1)
 play_game(small_board, p1, p2)
 
@@ -172,7 +172,7 @@ small_board = np.array([list(x) for x in """
 -|-|-|-|-|-|-|-
 -|-|-|-|-|-|-|-""".replace("|", "").split('\n')[1:]])
 
-p1 = Strategy("X", slider_eval, max_depth=1) # Do not change the search depths!
+p1 = Strategy("X", group4_eval, max_depth=1) # Do not change the search depths!
 p2 = Strategy("O", group1_eval, max_depth=1)
 play_game(small_board, p1, p2)
 
@@ -192,7 +192,7 @@ small_board = np.array([list(x) for x in """
 -|-|-|-|-|-|-|-
 -|-|-|-|-|-|-|-""".replace("|", "").split('\n')[1:]])
 
-p1 = Strategy("X", student_eval, max_depth=1) # Do not change the search depths!
+p1 = Strategy("X", group3_eval, max_depth=1) # Do not change the search depths!
 p2 = Strategy("O", slider_eval, max_depth=1)
 play_game(small_board, p1, p2)
 
@@ -215,7 +215,7 @@ small_board = np.array([list(x) for x in """
 -|X|-|-|-|-|-|-
 -|-|-|-|-|-|-|-""".replace("|", "").split('\n')[1:]])
 
-p1 = Strategy("X", student_eval, max_depth=1) # Change this to the slider eval to see how it should play out
+p1 = Strategy("X", slider_eval, max_depth=1) # Change this to the slider eval to see how it should play out
 p2 = Strategy("O", slider_eval, max_depth=1)
 play_game(small_board, p1, p2)
 
