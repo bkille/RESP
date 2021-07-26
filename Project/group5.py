@@ -5,347 +5,364 @@
 
 
 from termcolor import cprint
-
-def print_board(board, bolded=None):
-    """A debugging function to print you board in a pretty way"""
-    n = len(board)
-    # For every row but the last
-    for row_idx, row in enumerate(board[:-1]):
-        # Print the row as a string with a line below
-        if bolded and row_idx==bolded[0]:
-            cprint("|".join(row[:bolded[1]]), None, attrs=["underline"], end='|' if bolded[1] != 0 else '')
-            cprint(row[bolded[1]], None, attrs=["underline", "bold"], end='')
-            if bolded[1] != len(row) - 1:
-                cprint("|" + "|".join(row[bolded[1]+1:]), None, attrs=["underline"], end='')
-            print()
-        else:
-            cprint("|".join(row), None, attrs=["underline"])
-    row = board[-1]
-    if bolded and bolded[0] == len(board) - 1:
-        print("|".join(row[:bolded[1]]), end='|' if bolded[1] != 0 else '')
-        cprint(row[bolded[1]], None, attrs=["bold"], end='')
-        if bolded[1] != len(row) - 1:
-            cprint("|" + "|".join(row[bolded[1]+1:]), None, end='')
-        print()
-    else:
-        print("|".join(row))
-
+from kille import Strategy, print_board, complete_board, other_stone, play_game
+from functools import partial
+import numpy as np
 
 def other_stone(stone):
     return "X" if stone == "O" else "O"
 
-def consecutive_k(row, k, stone):
-    desired_row = [stone] * k
-    return sum(desired_row == row[i:i+k] for i in range(len(row) - k + 1))
+def get_random_board(n, turn_count=None):
+    board = np.array([["-"]*n for _ in range(n)])
+    moves = random.randint(1, n*n/2) if not turn_count else turn_count
+    stone = "X"
+    for _ in range(moves):
+        row_idx = col_idx = -1
+        while row_idx < 0 and board[row_idx][col_idx] != "-":
+            row_idx = random.randint(0, n-1)
+            col_idx = random.randint(0, n-1)
+        board[row_idx][col_idx] = stone
+        stone = other_stone(stone)
+    if complete_board(board):
+        board = get_random_board(n)
+    return board
+
+
+# In[ ]:
+
+
+# In[ ]:
+# =============================================================================
+# All of your helper functions go here!
+def check_col(board, char):
+  char_won = False
+  length = len(board)
+  for i in range(length):
+    char_count = 0
+    for j in range(length):
+      if board[j][i] == char:
+        char_count = char_count + 1
+      else:
+        char_count = 0
+    if char_count == 5:
+      char_won = True
+  return char_won
+
+def check_row(board, char):
+  char_won = False
+  length = len(board)
+  for i in range(length):
+    char_count = 0
+    for j in range(length):
+      if board[i][j] == char:
+        char_count = char_count + 1
+      else:
+        char_count = 0
+
+    if char_count == 5:
+      char_won = True
+  return char_won
+
+
+def check_diagonal_up_down(board, char):
+  char_won = False
+  length = len(board)
+  row = 0
+  col = 0
+  char_count = 0
+  while row < length and col < length:
+    if board[row][col] == char:
+      char_count = char_count + 1
+    row = row + 1
+    col = col + 1
+    if char_count == 5:
+      char_won = True
+  return char_won
+
+def check_diagonal_down_up(board, char):
+  char_won = False
+  length = len(board)
+  row = length - 1
+  col = 0
+  char_count = 0
+  while row >= 0 and col < length:
+    if board[row][col] == char:
+      char_count = char_count + 1
+    row = row - 1
+    col = col + 1
+    if char_count == 5:
+      char_won = True
+  return char_won
+
+def game_state(board):
+  x_won = False
+  o_won = False
+  x_won_row = check_row(board, "X")
+  x_won_col = check_col(board, "X")
+  x_won_updown_diag = check_diagonal_up_down(board, "X")
+  x_won_downup_diag = check_diagonal_down_up(board, "X")
+  o_won_row = check_row(board, "O")
+  o_won_col = check_col(board, "O")
+  o_won_updown_diag = check_diagonal_up_down(board, "O")
+  o_won_downup_diag = check_diagonal_down_up(board, "O")
+
+  if x_won_row or x_won_col or  x_won_updown_diag or x_won_downup_diag:
+    x_won = True
+  if o_won_row or o_won_col or o_won_updown_diag or o_won_downup_diag:
+    o_won = True
+
+  if x_won == False and o_won == False:
+    #print("returning None")
+    return None
+  if x_won == True and o_won == True:
+    #print("returning ERROR")
+    return "ERROR"
+  if x_won == True:
+    #print("return X")
+    return "X"
+  if o_won == True:
+    #print("return O")
+    return "O"
+    
+def consecutive_k(input_list, k, stone):
+    length = len(input_list)
+    stone_count = 0
+    for i in range(length):
+      if input_list[i] == stone:
+        stone_count = stone_count + 1
+      else:
+        stone_count = 0
+      if stone_count == k :
+        return True
+    return False
+
+def get_column(board, col_idx):
+  col_list = list()
+  for i in range(len(board)):
+    col_list.append(board[i][col_idx])
+  return col_list
+
+
+def is_empty(board):
+  for i in range(len(board)):
+    for j in range(len(board)):
+      if board[i][j] != "-":
+        return False
+  return True
 
 def get_downdiag(board, row_idx, col_idx):
     return [board[row_idx + i][col_idx + i] for i in range(min(len(board) - row_idx, len(board) - col_idx))]
 
 def get_updiag(board, row_idx, col_idx):
-    return [board[row_idx - i][col_idx + i] for i in range(min(row_idx + 1, len(board) - col_idx))]
+  diag = list()
+  row = row_idx
+  i = 0
+  while row >= 0:
+    diag.append(board[row_idx-i][col_idx-1+i])
+    i = i + 1
+    row = row - 1
+  return diag
 
-def winner_stone(board, stone):
-    k_count = 0
-    k = 5
-    for row in board:
-        row = list(row)
-        k_count += consecutive_k(row, k, stone)
-
-    for col_idx in range(len(board)):
-        bl = [row[col_idx] for row in board]
-        k_count += consecutive_k(bl, k, stone)
-
-    for row_idx in range(len(board)):
-        bl = get_updiag(board, row_idx, 0)
-        k_count += consecutive_k(bl, k, stone)
-        bl = get_downdiag(board, row_idx, 0)
-        k_count += consecutive_k(bl, k, stone)
-
-    for col_idx in range(len(board[0])):
-        bl = get_updiag(board, len(board) - 1, col_idx)
-        k_count += consecutive_k(bl, k, stone)
-        bl = get_downdiag(board, 0, col_idx)
-        k_count += consecutive_k(bl, k, stone)
-    
-    return k_count > 0
-
-def complete_board(board):
-    return winner_stone(board, "X") or winner_stone(board, "O") or not any('-' in row for row in board)
+# =============================================================================
 
 
-# In[ ]:
+# In[1]:
 
 
-import random
-import heapq
-import numpy as np
-from tqdm.notebook import tqdm
-import copy
-
-class Strategy:
-    def __init__(self, stone, eval_function, max_depth=1):
-        self.stone = stone
-        self.opponent_stone = other_stone(stone)
-        self.max_depth = max_depth
-        self.nodes = 0
-        self.pruned = 0
-        self.eval_function=eval_function 
-    
-    def alphabeta_search(self, board, depth, stone, alpha, beta):
-        if depth == 0 or complete_board(board):
-            score = self.eval_function(board, stone)
-            score = -score if stone == self.opponent_stone else score
-            self.nodes += 1
-            return score, (None, None)
-        
-        row_arr, col_arr = np.where(board == '-')
-        open_spaces = list(zip(row_arr, col_arr))
-        if stone == self.stone:
-            best_score = -np.infty
-            best_move = (None, None)
-            lop = len(open_spaces)
-            c = 0
-            for row, col in open_spaces:
-                new_board = copy.deepcopy(board)
-                new_board[row][col] = stone
-                score, move = self.alphabeta_search(new_board, depth-1, other_stone(stone), alpha, beta)
-                best_score = max(score, best_score)
-                if best_score >= beta:
-                    self.pruned += (lop - c)**depth
-                    break
-                elif best_score > alpha:
-                    best_move = (row, col)
-                    alpha = best_score
-        else:
-            best_score = np.infty
-            best_move = (None, None)
-            lop = len(open_spaces)
-            c = 0
-            for row, col in open_spaces:
-                c += 1
-                new_board = copy.deepcopy(board)
-                new_board[row][col] = stone
-                score, move = self.alphabeta_search(new_board, depth-1, other_stone(stone), alpha, beta)
-                best_score = min(score, best_score)
-                if best_score <= alpha:
-                    self.pruned += (lop - c)**depth
-                    break
-                elif best_score < beta:
-                    best_move = (row, col)
-                    beta = best_score
-                
-        self.nodes += 1
-        return best_score, best_move
-        
-                    
-    def get_move(self, board, max_nodes = 100):
-        score, move = self.alphabeta_search(board, self.max_depth, self.stone, -np.inf, np.inf)
-        return move
-            
-
-
-# In[ ]:
-
-
-def row_winner(row):
-  # return 'O' if O won
-  # return 'X' if X won
-  # return None if no winner
-  # return ERROR if two winners
-  ret_str = None
-  x_winner = True
-  o_winner = True
-  for c in row:
-    if c != "X":
-      x_winner = False
-    if c != "O":
-      o_winner = False
-  #checks and sets return string to appropriate winning character
-  if x_winner:
-    ret_str = "X"
-  if o_winner:
-    ret_str = "O"
-  
-  return ret_str
-
-def column_winner(board, col_idx):
-  # Returns the winner of the (col_idx)th column in the board
-  ret_str = None
-  x_winner = True
-  o_winner = True
-  
-  for row in board:
-    c = row[col_idx]
-    if c != "X":
-      x_winner = False
-    if c != "O":
-      o_winner = False
-  if x_winner:
-    ret_str = "X"
-  if o_winner:
-    ret_str = "O"
-  
-  return ret_str
-
-def student_consecutive_k(input_list, k, stone):
-    # Your code goes here
-    counter = 0
-    consecutive = False
-    for i in input_list:
-      if i == stone:
-        counter += 1
-      if i != stone:
-        counter = 0
-      if counter == k:
-        consecutive = True
-        break
-    return consecutive
-
-def get_column(board):
-  columns = []
-  for column_idx in range(len(board)):
-    single_column = []
-    for row in board:
-      single_column.append(row[column_idx])
-    columns.append(single_column)
-  return columns
-
-def row_probability(board, stone):
-  probability = 0
-  # Determines row probabilities for given stone
-  for row in board:
-    # Determines consecutives row probabilities for given stone
-    if student_consecutive_k(row, 1, stone):
-      probability = 1
-    if student_consecutive_k(row, 2, stone):
-      probability = 2
-    if student_consecutive_k(row, 3, stone):
-      probability = 3
-    if student_consecutive_k(row, 4, stone):
-      probability = 4
-    if student_consecutive_k(row, 5, stone):
-      probability = 5
-  return probability
-
-def column_probability(board, stone):
-  probability = 0
-  columns = get_column(board)
-  for column in columns:
-    if student_consecutive_k(column, 1, stone):
-      probability = 1
-    if student_consecutive_k(column, 2, stone):
-      probability = 2
-    if student_consecutive_k(column, 3, stone):
-      probability = 3
-    if student_consecutive_k(column, 4, stone):
-      probability = 4
-    if student_consecutive_k(column, 5, stone):
-      probability = 5
-  return probability
-
-def up_diagonal_probability(board, stone):
-  probability = 0
-  col_idx = 0
-  for row_idx in range(len(board)):
-    diagonal = get_updiag(board, row_idx, col_idx)
-    if student_consecutive_k(diagonal, 1, stone):
-      probability = 1
-    if student_consecutive_k(diagonal, 2, stone):
-      probability = 2
-    if student_consecutive_k(diagonal, 3, stone):
-      probability = 3
-    if student_consecutive_k(diagonal, 4, stone):
-      probability = 4
-    if student_consecutive_k(diagonal, 5, stone):
-      probability = 5
-  
-  col_idx = 1
-  row_index = len(board) -1
-  while col_idx < len(board):
-    diagonal = get_updiag(board, row_index, col_idx)
-    if student_consecutive_k(diagonal, 1, stone):
-      probability = 1
-    if student_consecutive_k(diagonal, 2, stone):
-      probability = 2
-    if student_consecutive_k(diagonal, 3, stone):
-      probability = 3
-    if student_consecutive_k(diagonal, 4, stone):
-      probability = 4
-    if student_consecutive_k(diagonal, 5, stone):
-      probability = 5
-    col_idx += 1
-  return probability
-  
-
-
-
-# In[ ]:
-
-
-def random_eval(_1, _2):
-    return random.random()
-
-# Emily Gianotti, Vivian Le, and Benjamin Martinez 
 def student_eval(board, stone):
-  
-  # Determines row probabilities
-  student_row_prob = row_probability(board, stone)
-  opponent_row_prob = - (row_probability(board, other_stone(stone)))
-  
-  # Determines column probabilities
-  student_column_prob = column_probability(board, stone)
-  opponent_column_prob = - (column_probability(board, other_stone(stone)))
-
-  # Determines up-diagonal probabilities
-  student_up_diag_prob = up_diagonal_probability(board, stone)
-  opponent_up_diag_prob = - (up_diagonal_probability(board, other_stone(stone)))
-  
-  # Determines if there are any winners  
-  if winner_stone(board, stone) == True:
-    probability = 5
-  elif winner_stone(board, stone) == False:
-    probability = -5
-  
-  # Determines final probability for the board
-  probability = 0
-  # Compares row probabilites
-  if student_row_prob > abs(opponent_row_prob):
-    row_prob = student_row_prob
+  length = len(board)
+  stone_prob = 0
+  student_prob = 0
+  #print("given stone", other_stone(stone))
+  student_stone = ""
+  if stone == "X":
+    student_stone = "O"
   else:
-    row_prob = opponent_row_prob
-  # Compares column probabilites
-  if student_column_prob > abs(opponent_row_prob):
-    column_prob = student_column_prob
-  else:
-    column_prob = opponent_column_prob
-  # Compoares up diagonal probabilities
-  if student_up_diag_prob > abs(opponent_up_diag_prob):
-    up_diag_prob = student_up_diag_prob
-  else:
-    up_diag_prob = opponent_up_diag_prob
-  # Compares final row and final column probabilites
-  if abs(row_prob) > abs(column_prob):
-    probability = row_prob
-  else:
-    probability = column_prob
-  # Compares winner of row and column probabilities with winner of up diagonal probability 
-  if abs(up_diag_prob) > abs(probability):
-    probability = up_diag_prob
-    
-  return probability # Returns final probability of the board
+    student_stone = "X"
+  if game_state(board) == stone:
+      return 999
+  if game_state(board) == student_stone:
+      return -999
+  if is_empty(board):
+    return 0
+  #print(student_stone, "'s turn")
+
+  for i in range(length):
+    row = board[i]
+    col = get_column(board, i)
+    for j in range(length):
+      hor_slice = list(row[j:j+5])
+      vert_slice = list(col[j:j+5])
+      down_diag = get_downdiag(board, i, j)
+      #up_diag = get_updiag(board, i, j)
+      #up_diag_slice = list(up_diag[j:j+5])
+      down_diag_slice = list(down_diag[j:j+5])
+
+      #stone in horizontal slice
+      if (len(hor_slice) == 5) and (stone in hor_slice) and (student_stone not in hor_slice):
+        stone_count = hor_slice.count(stone)
+        if stone_count == 1:
+           stone_prob = stone_prob + 10
+
+        if stone_count == 2:
+           stone_prob = stone_prob + 20
+           if consecutive_k(hor_slice, 2, stone):
+             stone_prob = stone_prob + 40
+        
+        if stone_count == 3:
+           stone_prob = stone_prob + 30
+           if consecutive_k(hor_slice, 3, stone):
+             stone_prob = stone_prob + 60
+
+        if stone_count == 4:
+           stone_prob = stone_prob + 40 + 999
+#----------------------------------------------------------------
+      #stone in vertical slice
+      if (len(vert_slice) == 5) and (stone in vert_slice) and (student_stone not in vert_slice):
+        stone_count = vert_slice.count(stone)
+        if stone_count == 1:
+           stone_prob = stone_prob + 10
+
+        if stone_count == 2:
+           stone_prob = stone_prob + 20
+           if consecutive_k(vert_slice, 2, stone):
+             stone_prob = stone_prob + 40
+        
+        if stone_count == 3:
+           stone_prob = stone_prob + 30
+           if consecutive_k(vert_slice, 3, stone):
+             stone_prob = stone_prob + 60
+
+        if stone_count == 4:
+           stone_prob = stone_prob + 40 + 999
+#----------------------------------------------------------------
+      #stone in down diagonal
+      if (len(down_diag_slice) == 5) and (stone in down_diag_slice) and (student_stone not in down_diag_slice):
+        stone_count = down_diag_slice.count(stone)
+        if stone_count == 1:
+           stone_prob = stone_prob + 10
+
+        if stone_count == 2:
+           stone_prob = stone_prob + 20
+           if consecutive_k(down_diag_slice, 2, stone):
+             stone_prob = stone_prob + 40
+        
+        if stone_count == 3:
+           stone_prob = stone_prob + 30
+           if consecutive_k(down_diag_slice, 3, stone):
+             stone_prob = stone_prob + 60
+
+        if stone_count == 4:
+           stone_prob = stone_prob + 40 + 999
+        
+#----------------------------------------------------------------
+      # #stone in up diagonal
+      # if (len(up_diag_slice) == 5) and (stone in up_diag_slice) and (student_stone not in up_diag_slice):
+      #   stone_count = up_diag_slice.count(stone)
+      #   if stone_count == 1:
+      #      stone_prob = stone_prob + 10
+
+      #   if stone_count == 2:
+      #      stone_prob = stone_prob + 20
+      #      if consecutive_k(up_diag_slice, 2, stone):
+      #        stone_prob = stone_prob + 40
+        
+      #   if stone_count == 3:
+      #      stone_prob = stone_prob + 30
+      #      if consecutive_k(up_diag_slice, 3, stone):
+      #        stone_prob = stone_prob + 60
+
+      #   if stone_count == 4:
+      #      stone_prob = stone_prob + 40 + 999
+#----------------------------------------------------------------
+      #student_stone in horizontal slice
+      if (len(hor_slice) == 5) and (student_stone in hor_slice) and (stone not in hor_slice):
+        student_stone_count = hor_slice.count(student_stone)
+        if student_stone_count == 1:
+           student_prob = student_prob + 10
+
+        if student_stone_count == 2:
+           student_prob = student_prob + 20
+           if consecutive_k(hor_slice, 2, student_stone):
+             student_prob = student_prob + 40
+        
+        if student_stone_count == 3:
+           student_prob = student_prob + 30
+           if consecutive_k(hor_slice, 3, student_stone):
+             student_prob = student_prob + 60
+
+        if student_stone_count == 4:
+           student_prob = student_prob + 40 + (999**2) #guarantees absolute win
+#-----------------------------------------------------------------
+      #student_stone in vertical
+      if (len(vert_slice) == 5) and (student_stone in vert_slice) and (stone not in vert_slice):
+        student_stone_count = vert_slice.count(student_stone)
+        if student_stone_count == 1:
+           student_prob = student_prob + 10
+
+        if student_stone_count == 2:
+           student_prob = stone_prob + 20
+           if consecutive_k(vert_slice, 2, student_stone):
+             student_prob = student_prob + 40
+        
+        if student_stone_count == 3:
+           student_prob = student_prob + 30
+           if consecutive_k(vert_slice, 3, student_stone):
+             student_prob = student_prob + 60
+
+        if student_stone_count == 4:
+           student_prob = student_prob + 40 + (999**2) 
+#-------------------------------------------------------------------
+      #student_stone in down diagonal
+      if (len(down_diag_slice) == 5) and (student_stone in down_diag_slice) and (stone not in down_diag_slice):
+        student_stone_count = down_diag_slice.count(student_stone)
+        if student_stone_count == 1:
+           student_prob = student_prob + 10
+
+        if student_stone_count == 2:
+           student_prob = stone_prob + 20
+           if consecutive_k(down_diag_slice, 2, student_stone):
+             student_prob = student_prob + 40 + 200
+        
+        if student_stone_count == 3:
+           student_prob = student_prob + 30
+           if consecutive_k(down_diag_slice, 3, student_stone):
+             student_prob = student_prob + 60 + 300
+
+        if student_stone_count == 4:
+           student_prob = student_prob + 40 + (999**2)
+#--------------------------------------------------------------------
+      #student_stone in up diagonal
+      # if (len(up_diag_slice) == 5) and (student_stone in up_diag_slice) and (stone not in up_diag_slice):
+      #   student_stone_count = up_diag_slice.count(student_stone)
+      #   if student_stone_count == 1:
+      #      student_prob = student_prob + 10
+
+      #   if student_stone_count == 2:
+      #      student_prob = stone_prob + 20
+      #      if consecutive_k(up_diag_slice, 2, student_stone):
+      #        student_prob = student_prob + 40 + 200
+        
+      #   if student_stone_count == 3:
+      #      student_prob = student_prob + 30
+      #      if consecutive_k(up_diag_slice, 3, student_stone):
+      #        student_prob = student_prob + 60 + 300
+
+      #   if student_stone_count == 4:
+      #      student_prob = student_prob + 40 + (999**2)
+
+  if student_prob > stone_prob:
+    final_prob = student_prob - stone_prob
+  if student_prob < stone_prob:
+    final_prob = stone_prob - student_prob
+  if student_prob == stone_prob:
+    final_prob = 0
+
+  #print("final_prob", final_prob)
+
+  return final_prob
 
 
-# In[25]:
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
+# In[2]:
 
 
